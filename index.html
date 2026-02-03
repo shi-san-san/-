@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>高知 裏道・時間帯マップ</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+  }
+  #map {
+    height: 100vh;
+  }
+  .controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  button {
+    margin: 2px 0;
+    width: 100%;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+  <strong>時間帯</strong><br>
+  <button onclick="setTime('day')">昼</button>
+  <button onclick="setTime('night')">夜</button>
+  <hr>
+  <strong>天気</strong><br>
+  <button onclick="setWeather('hot')">暑い</button>
+  <button onclick="setWeather('rain')">雨</button>
+  <button onclick="setWeather('normal')">通常</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // 地図初期化（高知市）
+  const map = L.map("map").setView([33.5597, 133.5311], 14);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+
+  let currentTime = "day";
+  let currentWeather = "normal";
+
+  const layers = [];
+
+  // データ定義
+  const spots = [
+    {
+      type: "shortcut",
+      time: "day",
+      weather: "any",
+      coords: [[33.5602,133.5305],[33.5610,133.5322]],
+      text: "駅裏の信号なし近道（昼は安全）"
+    },
+    {
+      type: "shortcut",
+      time: "night",
+      weather: "any",
+      coords: [[33.5602,133.5305],[33.5610,133.5322]],
+      text: "夜は暗く人通り少ない（注意）"
+    },
+    {
+      type: "comfort",
+      time: "day",
+      weather: "hot",
+      coords: [33.5585,133.5298],
+      text: "川沿いで風が通る。暑い日に快適"
+    },
+    {
+      type: "caution",
+      time: "night",
+      weather: "any",
+      coords: [33.5620,133.5340],
+      text: "夜は雰囲気が変わるエリア"
+    },
+    {
+      type: "comfort",
+      time: "day",
+      weather: "rain",
+      coords: [33.5590,133.5335],
+      text: "屋根が多く雨でも歩きやすい"
+    }
+  ];
+
+  function clearLayers() {
+    layers.forEach(l => map.removeLayer(l));
+    layers.length = 0;
+  }
+
+  function render() {
+    clearLayers();
+
+    spots.forEach(s => {
+      if (s.time !== currentTime) return;
+      if (s.weather !== "any" && s.weather !== currentWeather) return;
+
+      let layer;
+
+      if (Array.isArray(s.coords[0])) {
+        // 道（ポリライン）
+        layer = L.polyline(s.coords, {
+          color: currentTime === "night" ? "red" : "blue",
+          weight: 4
+        }).bindPopup(s.text);
+      } else {
+        // ピン
+        layer = L.marker(s.coords).bindPopup(s.text);
+      }
+
+      layer.addTo(map);
+      layers.push(layer);
+    });
+  }
+
+  function setTime(t) {
+    currentTime = t;
+    render();
+  }
+
+  function setWeather(w) {
+    currentWeather = w;
+    render();
+  }
+
+  render();
+</script>
+
+</body>
+</html>
